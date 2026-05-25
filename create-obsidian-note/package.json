@@ -1,0 +1,12 @@
+{
+  "name": "ai-skills",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "npx jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

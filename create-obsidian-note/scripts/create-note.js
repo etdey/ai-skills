@@ -250,6 +250,7 @@ function readBodyFromStdin() {
 }
 
 
+// Entry point when running this script directly
 function main() {
   const options = parseArgs(scriptArgs.slice(1));
   const now = new Date();
@@ -285,4 +286,18 @@ function main() {
 }
 
 
-main();
+// Export functions for testing when NODE env variable TESTING=1
+if (typeof process !== 'undefined' && process.env.TESTING === '1') {
+  // expose selected utilities
+  module.exports = {
+    formatLocalTimestamp,
+    normalizeNoteName,
+    normalizeVaultRelativeDir,
+    joinPath,
+  };
+}
+
+// Auto‑run when executed directly in the QuickJS runtime (or any non‑test environment)
+if (typeof scriptArgs !== 'undefined' && (typeof process === 'undefined' || process.env.TESTING !== '1')) {
+  main();
+}
