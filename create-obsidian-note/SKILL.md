@@ -10,7 +10,7 @@ Use this skill when the user wants to create a new note in Obsidian.
 ## Known configuration
 
 - Vault root directory: `$HOME/Documents/vault-main`
- - Helper script: `scripts/create-note.js`
+- Helper script: `scripts/create-note.js`
 
 The helper script adds the required frontmatter automatically; this skill should not construct frontmatter itself.
 
