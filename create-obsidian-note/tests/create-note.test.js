@@ -17,7 +17,7 @@ describe('formatLocalTimestamp', () => {
   });
 });
 
-describe('normalizeNoteName', () => {
+describe('add .md extension', () => {
   test('appends .md when missing', () => {
     expect(normalizeNoteName('my note')).toBe('my note.md');
   });
@@ -26,8 +26,20 @@ describe('normalizeNoteName', () => {
     expect(normalizeNoteName('my note.md')).toBe('my note.md');
   });
 
-  test('trims whitespace and normalises', () => {
-    expect(normalizeNoteName('  spaced  .md  ')).toBe('spaced  .md');
+  test('trims whitespace outer', () => {
+    expect(normalizeNoteName('  spaced.md  ')).toBe('spaced.md');
+  });
+
+  test('trims whitespace inner with .md extension', () => {
+    expect(normalizeNoteName('  spaced  .md')).toBe('spaced.md');
+  });
+
+  test('trims whitespace everywhere with .md extension', () => {
+    expect(normalizeNoteName('  spaced  .md ')).toBe('spaced.md');
+  });
+
+  test('condense whitespace between words', () => {
+    expect(normalizeNoteName('my  note   name.md')).toBe('my note name.md');
   });
 
   test('fails on empty name', () => {
@@ -36,6 +48,10 @@ describe('normalizeNoteName', () => {
 
   test('fails when name only contains .md', () => {
     expect(() => normalizeNoteName('.md')).toThrow();
+  });
+
+  test('fails when name only contains .md after whitespace trimming', () => {
+    expect(() => normalizeNoteName('  .md  ')).toThrow();
   });
 
   test('fails on path separators', () => {

@@ -108,20 +108,25 @@ function formatLocalTimestamp(date) {
 
 
 function normalizeNoteName(noteName) {
+  // Remove leading/trailing whitespace first
   const trimmed = noteName.trim();
   if (!trimmed) {
     fail("Note name must not be empty");
   }
 
-  const withoutExtension = trimmed.endsWith(".md")
-    ? trimmed.slice(0, -3)
-    : trimmed;
+  // Collapse any internal whitespace (including multiple spaces or tabs) to a single space
+  const collapsed = trimmed.replace(/\s+/g, " ");
 
-  if (!withoutExtension.trim()) {
+  // Strip a trailing .md extension if present – also trim any space that may precede it
+  const withoutExtension = collapsed.toLowerCase().endsWith('.md')
+    ? collapsed.slice(0, -3).trim()
+    : collapsed;
+
+  if (!withoutExtension) {
     fail("Note name must contain characters before the .md extension");
   }
 
-  if (withoutExtension.includes("/") || withoutExtension.includes("\\")) {
+  if (withoutExtension.includes('/') || withoutExtension.includes('\\')) {
     fail("Note name must not contain path separators");
   }
 
