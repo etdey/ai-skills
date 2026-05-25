@@ -10,6 +10,7 @@ Use this skill when the user wants to create a new note in Obsidian.
 ## Known configuration
 
 - Vault root directory: `$HOME/Documents/vault-main`
+- Document type frontmatter: `ai chat`
 - Helper script: `scripts/create-note.js`
 
 The helper script adds the required frontmatter automatically; this skill should not construct frontmatter itself.
@@ -36,31 +37,37 @@ Rules:
 
 ## How to create the note
 
-Use the helper script in this skill directory.
+Use the helper script in this skill's directory tree.  You MUST substitute the
+appropriate path to the script based on where this skill is located in the AI
+coding tool's configured skills directory.
 
 ```bash
- $HOME/.copilot/skills/create-obsidian-note/scripts/create-note.js \
+ SKILL_SUBDIR/scripts/create-note.js \
   --vault-root "VAULT_DIR" \
   --note-dir "VAULT_RELATIVE_DIRECTORY" \
-  --note-name "NOTE_NAME"
+  --note-name "NOTE_NAME" \
+  --document-type "DOCUMENT_TYPE"
 ```
 
 These placeholders in the above command should be replaced as follows:
+- `SKILL_SUBDIR` is the path to this skill's subdirectory within the AI coding tool's configured skills directory.
 - `VAULT_DIR` is the path to the vault root directory as defined in Known configuration section above.
 - `VAULT_RELATIVE_DIRECTORY` is the vault-relative directory path where the note should be created within the vault.
 - `NOTE_NAME` is the desired note name.
+- `DOCUMENT_TYPE` is the document type frontmatter as defined in the Known configuration section above.
 
 Always pipe the body content into the helper script via stdin. Do not use a temporary file.
 
-Behavior of the helper:
+Behavior of the helper script:
 
 - Computes `created` and `created-ts`
 - Reads Markdown body content from standard input
 - Requires the target directory to already exist
-- Refuses to overwrite an existing note unless `--overwrite` is passed
+- Refuses to overwrite an existing note unless `--overwrite` option is included
 - Prints the final created file path on success
 
-If the file already exists, ask the user whether to overwrite it before rerunning with `--overwrite`.
+If the file already exists, ask the user whether to overwrite it before rerunning with `--overwrite`. Never include
+this option without explicit user confirmation to overwrite the existing file.
 
 
 ## Note format

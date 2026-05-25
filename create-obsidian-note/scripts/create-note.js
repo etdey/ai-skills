@@ -11,6 +11,12 @@
 // the SKILL.md file so that it can be correctly used by the skill.
 //
 
+// Operational defaults
+const Defaults = {
+  "document-type": "ai chat",
+};
+
+
 function writeStderr(message) {
   std.err.puts(`${message}\n`);
 }
@@ -19,14 +25,15 @@ function writeStderr(message) {
 function usage() {
   writeStderr([
     "Usage:",
-    "  create-note.js --vault-root <path> --note-dir <vault-relative-dir> --note-name <name> [--overwrite]",
+    "  create-note.js --vault-root <path> --note-dir <vault-relative-dir> --note-name <name> [options]",
     "",
     "Options:",
-    "  --vault-root   Absolute path to the Obsidian vault root",
-    "  --note-dir     Vault-relative directory for the note (use . for vault root)",
-    "  --note-name    Note name; .md is implied",
-    "  --overwrite    Allow replacing an existing file",
-    "  stdin          Markdown body content",
+    "  --vault-root     Absolute path to the Obsidian vault root",
+    "  --note-dir       Vault-relative directory for the note (use . for vault root)",
+    "  --note-name      Note name; .md extension is implied",
+    "  --document-type  Document type frontmatter value (optional)",
+    "  --overwrite      Allow replacing an existing file",
+    "  stdin            Markdown body content piped to STDIN",
   ].join("\n"));
 }
 
@@ -74,6 +81,9 @@ function parseArgs(argv) {
       case "--note-name":
         options.noteName = value;
         break;
+      case "--document-type":
+        options.documentType = value;
+        break;
       default:
         fail(`Unknown option: ${arg}`);
     }
@@ -84,6 +94,10 @@ function parseArgs(argv) {
   if (!options.vaultRoot || !options.noteDir || !options.noteName) {
     usage();
     std.exit(1);
+  }
+
+  if (!options.documentType) {
+    options.documentType = Defaults["document-type"];
   }
 
   return options;
@@ -206,14 +220,14 @@ function isDirectory(path) {
 // This creates the entire content for the note, including the frontmatter
 // and the body. The dynamic frontmatter fields values are generated here.
 //
-function buildContent(date, body) {
+function buildContent(date, documentType, body) {
   const created = formatLocalTimestamp(date);
   const createdTs = Math.floor(date.getTime() / 1000);
   const frontmatter = [
     "---",
     `created: ${created}`,
     `created-ts: ${createdTs}`,
-    "document-type: copilot chat",
+    `document-type: ${documentType}`,
     "---",
     "",
   ].join("\n");
@@ -285,7 +299,7 @@ function main() {
     fail(`Target note already exists: ${targetPath}`);
   }
 
-  writeFile(targetPath, buildContent(now, body));
+  writeFile(targetPath, buildContent(now, options.documentType, body));
 
   std.out.puts(`${targetPath}\n`);
 }
