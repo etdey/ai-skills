@@ -16,6 +16,14 @@ const Defaults = {
   "document-type": "ai chat",
 };
 
+// Exit codes
+const EXIT_OK = 0; // successful run
+const EXIT_ERROR = 1; // general error (missing args, permission, etc.)
+const EXIT_FILE_EXISTS = 2; // target note already exists
+const EXIT_NO_FOLDER = 3; // target directory does not exist
+const EXIT_NO_VAULT = 4; // vault directory does not exist
+const EXIT_VAULT_ESCAPE = 5; // resolved path escapes the vault root
+
 
 function writeStderr(message) {
   std.err.puts(`${message}\n`);
@@ -33,20 +41,22 @@ function usage() {
     "  --note-name      Note name; .md extension is implied",
     "  --document-type  Document type frontmatter value (optional)",
     "  --overwrite      Allow replacing an existing file",
+    "  --preflight      Validate only, do not create note",
     "  stdin            Markdown body content piped to STDIN",
   ].join("\n"));
 }
 
 
-function fail(message) {
+function fail(message, code = EXIT_ERROR) {
   writeStderr(`Error: ${message}`);
-  std.exit(1);
+  std.exit(code);
 }
 
 
 function parseArgs(argv) {
   const options = {
     overwrite: false,
+    preflight: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -59,6 +69,11 @@ function parseArgs(argv) {
 
     if (arg === "--overwrite") {
       options.overwrite = true;
+      continue;
+    }
+
+    if (arg === "--preflight") {
+      options.preflight = true;
       continue;
     }
 
@@ -93,7 +108,7 @@ function parseArgs(argv) {
 
   if (!options.vaultRoot || !options.noteDir || !options.noteName) {
     usage();
-    std.exit(1);
+    std.exit(EXIT_ERROR);
   }
 
   if (!options.documentType) {
@@ -216,6 +231,35 @@ function isDirectory(path) {
 }
 
 
+// Validate all pre‑conditions for creating a note
+// Returns an object {code, message?, targetPath?, targetDir?}
+function validate(options, resolvedVaultRoot) {
+  const noteDir   = normalizeVaultRelativeDir(options.noteDir);
+  const noteName  = normalizeNoteName(options.noteName);
+  const targetDir = joinPath(resolvedVaultRoot, noteDir);
+  const targetPath = joinPath(targetDir, noteName);
+
+  // Target directory must exist and be a directory
+  if (!isDirectory(targetDir)) {
+    return {code: EXIT_NO_FOLDER, message: `Target path is not a directory: ${targetDir}`};
+  }
+
+  // Ensure the resolved absolute path stays inside the vault root
+  // (simple prefix check; both are absolute after realpath)
+  if (!targetPath.startsWith(resolvedVaultRoot + "/")) {
+    return {code: EXIT_VAULT_ESCAPE, message: `Resolved path escapes vault root: ${targetPath}`};
+  }
+
+  // Existing note handling
+  if (fileExists(targetPath) && !options.overwrite) {
+    return {code: EXIT_FILE_EXISTS, message: `Target note already exists: ${targetPath}`};
+  }
+
+  // All checks passed
+  return {code: EXIT_OK, targetPath};
+}
+
+
 // Test that the target path exists and is a directory
 // This creates the entire content for the note, including the frontmatter
 // and the body. The dynamic frontmatter fields values are generated here.
@@ -284,20 +328,17 @@ function main() {
     fail(`Vault root path is not a directory: ${resolvedVaultRoot}`);
   }
 
-  const noteDir = normalizeVaultRelativeDir(options.noteDir);
-  const noteName = normalizeNoteName(options.noteName);
-  const targetDir = joinPath(resolvedVaultRoot, noteDir);
-  const targetPath = joinPath(targetDir, noteName);
-
-  // Combined vault root + note directory
-  if (!isDirectory(targetDir)) {
-    fail(`Target path is not a directory: ${targetDir}`);
+  const validation = validate(options, resolvedVaultRoot);
+  // If preflight mode, exit silently with the appropriate code
+  if (options.preflight) {
+    std.exit(validation.code);
   }
-
-  // Target note file cannot already exist unless --overwrite is specified
-  if (fileExists(targetPath) && !options.overwrite) {
-    fail(`Target note already exists: ${targetPath}`);
+  // Normal mode – on any error, report via fail (which now exits with the code)
+  if (validation.code !== EXIT_OK) {
+    fail(validation.message, validation.code);
   }
+  // Success – extract prepared paths
+  const { targetPath } = validation;
 
   writeFile(targetPath, buildContent(now, options.documentType, body));
 
