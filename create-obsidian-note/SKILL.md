@@ -1,6 +1,7 @@
 ---
 name: create-obsidian-note
-description: Creates a new note in the user's Obsidian vault with Markdown body content; the included helper script adds the required frontmatter to the note.
+title: Create Obsidian Note
+description: Use this skill to create a Markdown note in a user's Obsidian vault.
 ---
 
 # Create Obsidian Note
@@ -33,7 +34,7 @@ If the user did not already provide them, prompt for:
 
 These are checks that you MUST perform:
 
-- Query the user about any note names that use characters that are not strictly alphanumeric or " _-.=+" (quotes not included) to confirm that the final file name will be as expected. If the user confirms, proceed with the name as‑given; if the user wants to change it, prompt again for a new name.
+- Query the user to confirm the use of a note name that uses characters that are not strictly alphanumeric or " _-.=+" (quotes not included). If the user confirms, proceed with the name as‑given; if the user wants to change it, prompt again for a new name.
 - Notes must always have body content; the helper script does not check for this. If the user's request does not include any identifiable content to use as the body of the note, you MUST confirm with the user that they want to create a note with placeholder text as the body. The placeholder text should be "This space intentionally left unblank."
 
 All filesystem validation of the vault path and note path MUST be performed by the helper script using `--preflight`.
